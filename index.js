@@ -1,7 +1,10 @@
 require('dotenv').config()
 const Discord = require('discord.js');
+const ytdl = require('ytdl-core');
 
 const client = new Discord.Client();
+
+const prefix = '!';
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -10,112 +13,139 @@ client.on('ready', () => {
 });
 
 
-client.on('voiceStateUpdate', function(oldState, newState) {
+client.on('voiceStateUpdate', function (oldState, newState) {
   if (
     oldState.channelID === null
     && newState.channelID !== null
-    && newState.id === '316262324438827009'
+    && newState.id === process.env.TARGET_ID
   ) {
     console.log('cagatay has connected');
+    newState.channel.join()
+      .then(async connection => {
+        // connection.play('http://www.sample-videos.com/audio/mp3/wave.mp3');
+        setTimeout(() => {
+
+          const dispatcher = connection.play('./duduf.wav');
+
+
+          dispatcher.on('start', () => {
+            console.log('audio is now playing!');
+          });
+
+          dispatcher.on('finish', () => {
+            console.log('audio has finished playing!');
+            connection.disconnect();
+          });
+
+          dispatcher.on('error', error => {
+            console.log(error);
+            connection.disconnect();
+          });
+        }, 1000);
+
+
+      }).catch(err => {
+        console.log(err);
+      });
   }
 });
 
 // Create an event listener for incoming messages
-// client.on("message", async message => {
-//   // Ignore if message owner is a bot
-//   // if (message.author.bot) return;
+client.on("message", async message => {
+  // Ignore if message owner is a bot
+  // if (message.author.bot) return;
 
-//   // Check for if messages start with prefix in config file
-//   if (!message.content.startsWith(config.prefix)) return;
+  // Check for if messages start with prefix in config file
+  if (!message.content.startsWith(prefix)) return;
 
-//   // Let's split the message according to the spaces and turn it to the list
-//   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
-//   const command = args.shift().toLowerCase();
+  // Let's split the message according to the spaces and turn it to the list
+  const args = message.content.slice(prefix.length).trim().split(/ +/g);
+  const command = args.shift().toLowerCase();
 
-//   if (command === "help") {
-//     message.reply(`List of all commands: 
-//         - \`latency\`
-//         - \`time\`
-//         - \`flip-a-coin\`
-//         - \`kick\`
-//         - \`ban\`
-//         - \`clear\`
-//         `)
-//       .catch(error => message.reply(error));
-//   }
+  if (command === "help") {
+    message.reply(`List of all commands: 
+        - \`latency\`
+        - \`time\`
+        - \`flip-a-coin\`
+        - \`kick\`
+        - \`ban\`
+        - \`clear\`
+        `)
+      .catch(error => message.reply(error));
+  }
 
-//   else if (command === "time") {
-//     var date = new Date();
-//     let options = {
-//       weekday: "long", year: "numeric", month: "short",
-//       day: "numeric", hour: "2-digit", minute: "2-digit"
-//     };
+  else if (command === "time") {
+    var date = new Date();
+    let options = {
+      weekday: "long", year: "numeric", month: "short",
+      day: "numeric", hour: "2-digit", minute: "2-digit"
+    };
 
-//     message.reply(`Current time and date is ${date.toLocaleTimeString("en-us", options)}`);
-//   }
+    message.reply(`Current time and date is ${date.toLocaleTimeString("en-us", options)}`);
+  }
 
-//   else if (command === "latency") {
-//     const m = await message.channel.send("Latency calculating...");
-//     m.edit(`Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ws.ping)}ms`);
-//   }
+  else if (command === "latency") {
+    const m = await message.channel.send("Latency calculating...");
+    m.edit(`Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ws.ping)}ms`);
+  }
 
-//   else if (command === "kick") {
-//     // This command must be limited to mods and admins. In this example we just hardcode the role names.
-//     if (!message.member.roles.cache.some(r => ["Administrator", "Moderator"].includes(r.name)))
-//       return message.reply("Sorry, you don't have permissions to use this!");
+  else if (command === "kick") {
+    // This command must be limited to mods and admins. In this example we just hardcode the role names.
+    if (!message.member.roles.cache.some(r => ["Administrator", "Moderator"].includes(r.name)))
+      return message.reply("Sorry, you don't have permissions to use this!");
 
-//     let member = message.mentions.members.first() || message.guild.members.get(args[0]);
-//     if (!member)
-//       return message.reply("Please mention a valid member of this server");
-//     if (!member.kickable)
-//       return message.reply("I cannot kick this user! Do they have a higher role? Do I have kick permissions?");
+    let member = message.mentions.members.first() || message.guild.members.get(args[0]);
+    if (!member)
+      return message.reply("Please mention a valid member of this server");
+    if (!member.kickable)
+      return message.reply("I cannot kick this user! Do they have a higher role? Do I have kick permissions?");
 
-//     let reason = args.slice(1).join(' ');
-//     if (!reason) reason = "No reason provided";
+    let reason = args.slice(1).join(' ');
+    if (!reason) reason = "No reason provided";
 
-//     await member.kick(reason)
-//       .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
-//     message.reply(`${member.user.tag} has been kicked by ${message.author.tag} because: ${reason}`);
+    await member.kick(reason)
+      .catch(error => message.reply(`Sorry ${message.author} I couldn't kick because of : ${error}`));
+    message.reply(`${member.user.tag} has been kicked by ${message.author.tag} because: ${reason}`);
 
-//   }
+  }
 
-//   else if (command === "ban") {
-//     // This command must be limited to mods and admins. In this example we just hardcode the role names.
-//     if (!message.member.roles.cache.some(r => ["Administrator"].includes(r.name)))
-//       return message.reply("Sorry, you don't have permissions to use this!");
+  else if (command === "ban") {
+    // This command must be limited to mods and admins. In this example we just hardcode the role names.
+    if (!message.member.roles.cache.some(r => ["Administrator"].includes(r.name)))
+      return message.reply("Sorry, you don't have permissions to use this!");
 
-//     let member = message.mentions.members.first();
-//     if (!member)
-//       return message.reply("Please mention a valid member of this server");
-//     if (!member.bannable)
-//       return message.reply("I cannot ban this user! Do they have a higher role? Do I have ban permissions?");
+    let member = message.mentions.members.first();
+    if (!member)
+      return message.reply("Please mention a valid member of this server");
+    if (!member.bannable)
+      return message.reply("I cannot ban this user! Do they have a higher role? Do I have ban permissions?");
 
-//     let reason = args.slice(1).join(' ');
-//     if (!reason) reason = "No reason provided";
+    let reason = args.slice(1).join(' ');
+    if (!reason) reason = "No reason provided";
 
-//     await member.ban(reason)
-//       .catch(error => message.reply(`Sorry ${message.author} I couldn't ban because of : ${error}`));
-//     message.reply(`${member.user.tag} has been banned by ${message.author.tag} because: ${reason}`);
-//   }
+    await member.ban(reason)
+      .catch(error => message.reply(`Sorry ${message.author} I couldn't ban because of : ${error}`));
+    message.reply(`${member.user.tag} has been banned by ${message.author.tag} because: ${reason}`);
+  }
 
-//   else if (command === "clear") {
-//     // This command removes all messages from all users in the channel, up to 100.
+  else if (command === "clear") {
+    // This command removes all messages from all users in the channel, up to 100.
 
-//     // get the delete count, as an actual number.
-//     const deleteCount = parseInt(args[0], 10);
+    // get the delete count, as an actual number.
+    const deleteCount = parseInt(args[0], 10);
 
-//     if (!deleteCount || deleteCount < 2 || deleteCount > 100)
-//       return message.reply("Please provide a number between 2 and 100 for the number of messages to delete");
+    if (!deleteCount || deleteCount < 2 || deleteCount > 100)
+      return message.reply("Please provide a number between 2 and 100 for the number of messages to delete");
 
-//     const fetched = await message.channel.messages.fetch({ limit: deleteCount });
-//     message.channel.bulkDelete(fetched)
-//       .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
-//   }
+    const fetched = await message.channel.messages.fetch({ limit: deleteCount });
+    message.channel.bulkDelete(fetched)
+      .catch(error => message.reply(`Couldn't delete messages because of: ${error}`));
+  }
 
-//   else {
-//     message.reply(`The \`${command}\` is not a valid command. Type \`${config.prefix}help\` to see all commands`)
-//   }
-// });
+  else {
+    message.reply(`The \`${command}\` is not a valid command. Type \`${config.prefix}help\` to see all commands`)
+  }
+});
 
 
 client.login(process.env.TOKEN);
